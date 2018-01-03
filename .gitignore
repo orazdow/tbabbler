@@ -1,3 +1,5 @@
 __pycache__
 params.txt
 tweetlog.txt
+auth.txt
+resources/*
