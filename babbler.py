@@ -1,13 +1,8 @@
 from twython import TwythonStreamer
+from getparams import ParamsTxt 
 from queue import Queue
 from threading import Thread
 import win32api, pyttsx3, signal, time
-
-
-APP_KEY = "oILDpMG2QxoALSdoRQJUS3T1v"
-APP_SECRET = "FY7XTmNpzo2u9CnQE4FISFTlkViyYMp6lwntmT2vmPYM03lhgv"
-OAUTH_TOKEN = "814932261908922368-1fWVVgkO6S53r3ko6YzYll9q70X9Gd4" 
-OAUTH_TOKEN_SECRET = "qMrKL1o2fgitVKFOtGZAaLQzh6PXS3LMy6tpmJeAGU1FY"
 
 
 class MyStreamer(TwythonStreamer):
@@ -64,8 +59,17 @@ class MyStreamer(TwythonStreamer):
                     time.sleep(0.3)
 
     def on_error(self, status_code, data):
-        print(status_code)
-        # self.disconnect()
+        if(status_code == 430):
+            print('twitter status code 420: user rate limited. too many requests')
+        elif(status_code == 401):
+            print('twitter status code 401: missing or incorrect authentication')
+        else:
+            print('twitter error status code: '+str(status_code))
+        print('exiting...')
+        self.go = False
+        self.engine.stop()
+        self.disconnect()
+        self.t.join()
 
     def log_tweet(self, text):
         self.log = open(self.logpath, 'a+', encoding='utf-8')
@@ -127,12 +131,32 @@ class MyStreamer(TwythonStreamer):
             self.ignores = self.ignores + inpt
 
 
-stream = MyStreamer(APP_KEY, APP_SECRET, OAUTH_TOKEN, OAUTH_TOKEN_SECRET, 'tweetlog.txt')
-stream.addIgnore(['free', 'prize', 'giveaway', 'daily', 'discount', 'sale', 'jobs', 'careers', 'newsletter'])
-stream.set_rmvHt(True)
-# stream.set_skipRt(True)
-stream.set_waitTime(1)
-# stream.set_maxNum(20)
-stream.statuses.filter(track='poop', tweet_mode='extended')
+def main():
+	p = ParamsTxt('params.txt')
 
+	if(not p.auth_set):
+		print('authentication not found in params.txt\nexiting...')
+		input()
+		return
 
+	print('stream keywords: '+p.streamParams)
+	s = ''
+	for w in p.ignoreParams:
+		s += w + ' '
+	print('ignore keywords: '+s)
+	if(p.ignoreRetweets):	
+		print('ignore retweets\n')
+
+	stream = MyStreamer(p.auth['APP_KEY'], p.auth['APP_SECRET'], p.auth['OAUTH_TOKEN'], p.auth['OAUTH_TOKEN_SECRET'], 'tweetlog.txt')
+	# stream = MyStreamer(APP_KEY, APP_SECRET, OAUTH_TOKEN, OAUTH_TOKEN_SECRET, 'tweetlog.txt')
+
+	stream.addIgnore(p.ignoreParams)
+	stream.set_rmvHt(True)
+	stream.set_skipRt(p.ignoreRetweets)
+	stream.set_waitTime(1)
+	stream.set_maxNum(200)
+
+	print('\nstarted stream...\n')
+	stream.statuses.filter(track=p.streamParams, tweet_mode='extended')
+
+main()
