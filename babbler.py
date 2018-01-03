@@ -94,7 +94,7 @@ class MyStreamer(TwythonStreamer):
         if self.skipRT and str[:3] == 'RT ':
             print('skipped retweet: '+str+'\n')
             return True
-        s = str.lower()
+        s = str.lower().replace('!', '')
         for w in self.ignores:
             if s.find(w.lower()) > -1:
                 print('ignored: '+w+'\n')
@@ -139,7 +139,7 @@ class ParamsTxt:
 		self.wrote_params = False
 		self.auth_set = False
 		self.auth = {}
-		self.paramInit = '# put one or more search terms below:  ex: large cat, devito, scones\nhodl\n\n# put ignore terms below:  ex: offer, sale, newsletter\noffer, sale, newsletter\n\n# uncomment (#) to ignore retweets:\n#ignore-retweets'
+		self.paramInit = '# put one or more search terms below:  ex: large cat, devito, scones\nhodl\n\n# put ignore terms below:  ex: offer, sale, newsletter\noffer, sale, newsletter\n\n# uncomment to ignore retweets:\n#ignore-retweets'
 		self.authinit = '\n\n#twitter authentication goes here:\nAPP_KEY = "..."\nAPP_SECRET = "..."\nOAUTH_TOKEN = "..." \nOAUTH_TOKEN_SECRET = "..."'
 		self.get_params(path)
 
@@ -223,10 +223,8 @@ def main():
 		return
 
 	print('stream keywords: '+p.streamParams)
-	s = ''
-	for w in p.ignoreParams:
-		s += w + ' '
-	print('ignore keywords: '+s)
+	print('ignore keywords: '+', '.join(p.ignoreParams))
+
 	if(p.ignoreRetweets):	
 		print('ignore retweets\n')
 
